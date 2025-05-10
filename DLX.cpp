@@ -1,0 +1,197 @@
+#include"DLX.hpp"
+using namespace std;
+
+// 映射函式：將 cell(row, col) 放入 num 對應到第幾欄
+int cellCol(int r, int c) { return 9 * r + c; }          // 0~80
+int rowCol(int r, int num) { return 81 + 9 * r + num; }  // 81~161
+int colCol(int c, int num) { return 162 + 9 * c + num; } // 162~242
+int boxCol(int r, int c, int num) {
+    return 243 + 9 * ((r / 3) * 3 + (c / 3)) + num;       // 243~323
+}
+
+void initDLX(vector<Column> &columns,Node *&root,vector<vector<Node*>> &row_nodes){
+    // 初始化欄位 header，形成 circular linked list
+    root = new Column();
+    root->L = root->R = root;
+    for (int i = 0; i < COLS; ++i) {
+        columns[i].name = i;
+        columns[i].U = columns[i].D = &columns[i];
+        columns[i].S = 0;
+        columns[i].C = &columns[i];
+
+        // 插入到 root 的右邊
+        columns[i].L = root->L;
+        columns[i].R = root;
+        root->L->R = &columns[i];
+        root->L = &columns[i];
+    }
+
+    // 為每個可能的 (r, c, n) 建立對應節點
+    for (int r = 0; r < N; ++r) {
+        for (int c = 0; c < N; ++c) {
+            for (int n = 0; n < N; ++n) {
+                int rowID = (r * 81) + (c * 9) + n;
+                vector<int> colIDs = {
+                    cellCol(r, c),
+                    rowCol(r, n),
+                    colCol(c, n),
+                    boxCol(r, c, n)
+                };
+
+                Node* first = nullptr;
+                Node* prev = nullptr;
+
+                for (int colID : colIDs) {
+                    Column* col = &columns[colID];
+
+                    // 建立節點
+                    Node* node = new Node();
+                    node->C = col;
+                    node->rowID = rowID;
+
+                    // 垂直插入 column
+                    node->U = col->U;
+                    node->D = col;
+                    col->U->D = node;
+                    col->U = node;
+                    col->S++;
+
+                    // 左右連結（行內）
+                    if (!first) {
+                        first = node;
+                        node->L = node->R = node;
+                    } else {
+                        node->L = prev;
+                        node->R = first;
+                        prev->R = node;
+                        first->L = node;
+                    }
+
+                    prev = node;
+                    row_nodes[rowID].push_back(node); // 可選：儲存節點指標
+                }
+            }
+        }
+    }
+    cout << "初始化完成：729 行 × 324 欄\n";
+}
+
+// 移除欄位 col 與其相關列（行）
+void cover(Column* col) {
+    // 移除 col 自身
+    col->R->L = col->L;
+    col->L->R = col->R;
+
+    // 遍歷 col 欄中所有節點（從下往下）
+    for (Node* row = col->D; row != col; row = row->D) {
+        // 對該節點所在的行，移除其他欄位中的節點
+        for (Node* node = row->R; node != row; node = node->R) {
+            node->D->U = node->U;
+            node->U->D = node->D;
+            ((Column*)(node->C))->S--; // 該欄剩餘節點數減一
+        }
+    }
+}
+
+// 還原欄位 col 與其所有相關節點（反向操作）
+void uncover(Column* col) {
+    // 反向遍歷 col 欄中的所有節點（從上往上）
+    for (Node* row = col->U; row != col; row = row->U) {
+        // 對該節點所在的行，還原其他欄位中的節點
+        for (Node* node = row->L; node != row; node = node->L) {
+            ((Column*)node->C)->S++;
+            node->D->U = node;
+            node->U->D = node;
+        }
+    }
+
+    // 還原 col 自身
+    col->R->L = col;
+    col->L->R = col;
+}
+
+// 選擇節點最少的 Column，減少分支（最佳化）
+Column* selectColumn(Node *&root) {
+    Column* best = nullptr;
+    int minSize = 1e9;
+    for (Column* c = static_cast<Column*>(root->R); c != root; c = static_cast<Column*>(c->R)) {
+        if (c->S < minSize) {
+            minSize = c->S;
+            best = c;
+        }
+    }
+    return best;
+}
+
+// 主遞迴搜尋函式
+bool search(vector<Node*> &solution, Node *&root, int k) {
+    if (root->R == root) {
+        // 沒有欄位可選，表示解完整了
+        return true;
+    }
+
+    Column* col = selectColumn(root);
+    if (!col || col->S == 0) return false;
+
+    cover(col);
+
+    for (Node* row = col->D; row != col; row = row->D) {
+        solution.push_back(row);
+
+        // Cover 該行中所有欄（跳過自己）
+        for (Node* node = row->R; node != row; node = node->R) {
+            cover((Column*)(node->C));
+        }
+
+        if (search(solution, root, k + 1)) {
+            return true; // 找到解
+        }
+
+        // 回溯
+        for (Node* node = row->L; node != row; node = node->L) {
+            uncover((Column*)(node->C));
+        }
+        solution.pop_back();
+    }
+
+    uncover(col);
+    return false;
+}
+
+// 預先 cover 題目已知的數字
+void applyClues(vector<vector<int>> &sudoku,vector<vector<Node*>> &row_nodes) {
+    for (int r = 0; r < 9; ++r) {
+        for (int c = 0; c < 9; ++c) {
+            int val = sudoku[r][c];
+            if (val != 0) {
+                int n = val - 1;
+                int rowID = r * 81 + c * 9 + n;
+                // 用這一行的所有節點做 cover
+                for (Node* node : row_nodes[rowID]) {
+                    cover((Column*)(node->C));
+                }
+            }
+        }
+    }
+}
+
+// 還原 solution[] 回數獨盤面
+void extractAnswer(vector<Node*> &solution, vector<vector<int>> &answer) {
+    for (Node* row : solution) {
+        int rowID = row->rowID;
+        int r = rowID / 81;
+        int c = (rowID / 9) % 9;
+        int n = rowID % 9;
+        answer[r][c] = n + 1; // 回填正確值
+    }
+}
+
+// 印出盤面
+void printGrid(vector<vector<int>> grid) {
+    for (int r = 0; r < 9; ++r) {
+        for (int c = 0; c < 9; ++c) {
+            cout << grid[r][c] << ' ';
+        }
+        cout << '\n';
+    }
+}
