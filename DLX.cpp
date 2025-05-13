@@ -195,3 +195,22 @@ void printGrid(vector<vector<int>> grid) {
         cout << '\n';
     }
 }
+
+void clearDLX(vector<vector<Node*>> &row_nodes, vector<Column> &columns, Node *&root, vector<Node*> solution) {
+    for (int i = 0; i < SIZE; ++i) {
+        for (Node* node : row_nodes[i]) {
+            delete node;
+        }
+        row_nodes[i].clear();
+    }
+
+    for (int i = 0; i < COLS; ++i) {
+        // 因為 Column 是 stack 分配，不需 delete columns[i]
+        columns[i].U = columns[i].D = nullptr;
+        columns[i].S = 0;
+    }
+
+    delete root;
+    root = nullptr;
+    solution.clear();
+}

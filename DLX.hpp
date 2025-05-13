@@ -32,5 +32,6 @@ bool search(vector<Node*> &solution, Node *&root, int k);
 void applyClues(vector<vector<int>> &sudoku,vector<vector<Node*>> &row_nodes);
 void extractAnswer(vector<Node*> &solution, vector<vector<int>> &answer);
 void printGrid(vector<vector<int>> grid);
+void clearDLX(vector<vector<Node*>> &row_nodes, vector<Column> &columns, Node *&root, vector<Node*> solution);
 
 #endif

@@ -28,7 +28,8 @@ int main(){
         printGrid(answer);
     } else {
         cout << "找不到解。\n";
-    }
+	}
+    clearDLX(row_nodes, columns, root, solution);
     system("pause");
     return 0;
 }
