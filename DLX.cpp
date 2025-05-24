@@ -8,6 +8,7 @@ int DLX::colCol(int c, int num) { return 162 + 9 * c + num; } // 162~242
 int DLX::boxCol(int r, int c, int num) {
     return 243 + 9 * ((r / 3) * 3 + (c / 3)) + num;       // 243~323
 }
+
 void DLX::input(){
 	cout << "請輸入 9x9 數獨（0 表空格）：\n";
     for (int r = 0; r < 9; ++r)
@@ -76,6 +77,7 @@ void DLX::initDLX(){
 
                     prev = node;
                     row_nodes[rowID].push_back(node); // 可選：儲存節點指標
+					node_pool.push_back(node);
                 }
             }
         }
@@ -204,22 +206,40 @@ void DLX::printGrid() {
 }
 
 void DLX::clearDLX() {
-    for (int i = 0; i < SIZE; ++i) {
-        for (Node* node : row_nodes[i]) {
+    // 先清理所有動態配置的節點
+    for(Node* node : node_pool) {
+        if(node != nullptr) {
             delete node;
         }
+    }
+    node_pool.clear();
+    
+    // 清理行節點的向量
+    for (int i = 0; i < SIZE; ++i) {
         row_nodes[i].clear();
     }
-
+    
+    // 重置 columns
     for (int i = 0; i < COLS; ++i) {
-        // 因為 Column 是 stack 分配，不需 delete columns[i]
-        columns[i].U = columns[i].D = nullptr;
+        columns[i].U = columns[i].D = &columns[i];
+        columns[i].L = columns[i].R = &columns[i];
         columns[i].S = 0;
     }
-
-    delete root;
-    root = nullptr;
+    
+    // 清理根節點
+    if(root != nullptr) {
+        delete root;
+        root = nullptr;
+    }
+    
     solution.clear();
+    
+    // 清空數獨盤面
+    for(int i = 0; i < 9; ++i) {
+        for(int j = 0; j < 9; ++j) {
+            sudoku[i][j] = 0;
+        }
+    }
 }
 
 bool DLX::DLXmain(){

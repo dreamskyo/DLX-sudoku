@@ -35,7 +35,8 @@ private:
 	vector<vector<int>> *answer;
     vector<Column> columns;
     Node* root;
-    vector<vector<Node*>> row_nodes; // 每行的節點（最多 4 個）	
+    vector<vector<Node*>> row_nodes; // 每行的節點（最多 4 個）
+	vector<Node*> node_pool;	
 
 public:
 
@@ -47,14 +48,14 @@ public:
         	colCol(2, 4),
         	boxCol(1, 2, 4)
     	};
-		sudoku.assign(9,vector<int>(9)); // 0 表示空格，其餘是題目的提示數
+		sudoku.assign(9,vector<int>(9,0)); // 0 表示空格，其餘是題目的提示數
 		columns.resize(COLS);
 		root = nullptr;
 		row_nodes.resize(SIZE);
 	}
 
 	void input();
-	void initDLX();//這裡的傳入值需要注意
+	void initDLX();
 	void cover(Column* col);
 	void uncover(Column* col);
 	Column* selectColumn();
@@ -65,7 +66,9 @@ public:
 	void clearDLX();
 	bool DLXmain();
 
-	~DLX(){};
+	~DLX(){
+		clearDLX();
+	};
 	
 };
 
