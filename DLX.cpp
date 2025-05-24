@@ -2,14 +2,21 @@
 using namespace std;
 
 // 映射函式：將 cell(row, col) 放入 num 對應到第幾欄
-int cellCol(int r, int c) { return 9 * r + c; }          // 0~80
-int rowCol(int r, int num) { return 81 + 9 * r + num; }  // 81~161
-int colCol(int c, int num) { return 162 + 9 * c + num; } // 162~242
-int boxCol(int r, int c, int num) {
+int DLX::cellCol(int r, int c) { return 9 * r + c; }          // 0~80
+int DLX::rowCol(int r, int num) { return 81 + 9 * r + num; }  // 81~161
+int DLX::colCol(int c, int num) { return 162 + 9 * c + num; } // 162~242
+int DLX::boxCol(int r, int c, int num) {
     return 243 + 9 * ((r / 3) * 3 + (c / 3)) + num;       // 243~323
 }
+void DLX::input(){
+	cout << "請輸入 9x9 數獨（0 表空格）：\n";
+    for (int r = 0; r < 9; ++r)
+        for (int c = 0; c < 9; ++c)
+            cin >> sudoku[r][c];
+    *answer = sudoku;
+}
 
-void initDLX(vector<Column> &columns,Node *&root,vector<vector<Node*>> &row_nodes){
+void DLX::initDLX(){
     // 初始化欄位 header，形成 circular linked list
     root = new Column();
     root->L = root->R = root;
@@ -77,7 +84,7 @@ void initDLX(vector<Column> &columns,Node *&root,vector<vector<Node*>> &row_node
 }
 
 // 移除欄位 col 與其相關列（行）
-void cover(Column* col) {
+void DLX::cover(Column* col) {
     // 移除 col 自身
     col->R->L = col->L;
     col->L->R = col->R;
@@ -94,7 +101,7 @@ void cover(Column* col) {
 }
 
 // 還原欄位 col 與其所有相關節點（反向操作）
-void uncover(Column* col) {
+void DLX::uncover(Column* col) {
     // 反向遍歷 col 欄中的所有節點（從上往上）
     for (Node* row = col->U; row != col; row = row->U) {
         // 對該節點所在的行，還原其他欄位中的節點
@@ -111,7 +118,7 @@ void uncover(Column* col) {
 }
 
 // 選擇節點最少的 Column，減少分支（最佳化）
-Column* selectColumn(Node *&root) {
+DLX::Column* DLX::selectColumn() {
     Column* best = nullptr;
     int minSize = 1e9;
     for (Column* c = static_cast<Column*>(root->R); c != root; c = static_cast<Column*>(c->R)) {
@@ -124,13 +131,13 @@ Column* selectColumn(Node *&root) {
 }
 
 // 主遞迴搜尋函式
-bool search(vector<Node*> &solution, Node *&root, int k) {
+bool DLX::search(int k) {
     if (root->R == root) {
         // 沒有欄位可選，表示解完整了
         return true;
     }
 
-    Column* col = selectColumn(root);
+    Column* col = selectColumn();
     if (!col || col->S == 0) return false;
 
     cover(col);
@@ -143,7 +150,7 @@ bool search(vector<Node*> &solution, Node *&root, int k) {
             cover((Column*)(node->C));
         }
 
-        if (search(solution, root, k + 1)) {
+        if (search(k + 1)) {
             return true; // 找到解
         }
 
@@ -159,7 +166,7 @@ bool search(vector<Node*> &solution, Node *&root, int k) {
 }
 
 // 預先 cover 題目已知的數字
-void applyClues(vector<vector<int>> &sudoku,vector<vector<Node*>> &row_nodes) {
+void DLX::applyClues() {
     for (int r = 0; r < 9; ++r) {
         for (int c = 0; c < 9; ++c) {
             int val = sudoku[r][c];
@@ -176,27 +183,27 @@ void applyClues(vector<vector<int>> &sudoku,vector<vector<Node*>> &row_nodes) {
 }
 
 // 還原 solution[] 回數獨盤面
-void extractAnswer(vector<Node*> &solution, vector<vector<int>> &answer) {
+void DLX::extractAnswer() {
     for (Node* row : solution) {
         int rowID = row->rowID;
         int r = rowID / 81;
         int c = (rowID / 9) % 9;
         int n = rowID % 9;
-        answer[r][c] = n + 1; // 回填正確值
+        (*answer)[r][c] = n + 1; // 回填正確值
     }
 }
 
 // 印出盤面
-void printGrid(vector<vector<int>> grid) {
+void DLX::printGrid() {
     for (int r = 0; r < 9; ++r) {
         for (int c = 0; c < 9; ++c) {
-            cout << grid[r][c] << ' ';
+            cout << (*answer)[r][c] << ' ';
         }
         cout << '\n';
     }
 }
 
-void clearDLX(vector<vector<Node*>> &row_nodes, vector<Column> &columns, Node *&root, vector<Node*> solution) {
+void DLX::clearDLX() {
     for (int i = 0; i < SIZE; ++i) {
         for (Node* node : row_nodes[i]) {
             delete node;
@@ -214,3 +221,20 @@ void clearDLX(vector<vector<Node*>> &row_nodes, vector<Column> &columns, Node *&
     root = nullptr;
     solution.clear();
 }
+
+bool DLX::DLXmain(){
+	input();
+	initDLX();      // 建立 Dancing Links 結構
+    applyClues();   // 根據已知數字 cover
+    if (search(0)) {
+        extractAnswer(); // 還原解答
+        cout << "\n解答為：\n";
+        printGrid();
+		clearDLX();
+		return true;
+    } else {
+        cout << "找不到解。\n";
+		clearDLX();
+		return false;
+	}
+};
