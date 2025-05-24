@@ -9,3 +9,6 @@
 >· [The Dancing Links Algorithm - An explanation that is less explanatory but more on implementation?](https://stackoverflow.com/questions/1518335/the-dancing-links-algorithm-an-explanation-that-is-less-explanatory-but-more-o)  
   · [Donald E. Knuth Dancing links](https://arxiv.org/abs/cs/0011047)  
   · [Solving Sudoku efficiently with Dancing Links](https://www.kth.se/social/files/58861771f276547fe1dbf8d1/HLaestanderMHarrysson_dkand14.pdf)
+
+大部分是Chatgpt做的，我負責研究理論與debug。  
+高中生第一次實作!如有錯誤請不吝賜教~  
