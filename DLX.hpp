@@ -40,7 +40,7 @@ private:
 
 public:
 
-	DLX(vector<vector<int>> output){
+	DLX(vector<vector<int>> &output){
 		answer = &output;
 		cols = {
         	cellCol(1, 2),

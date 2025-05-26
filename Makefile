@@ -20,7 +20,7 @@ $(TARGET): $(OBJS)
 
 # 清理編譯產生的檔案
 clean:
-	del /F /Q $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(TARGET)
 
 # 重新編譯
 rebuild: clean all
