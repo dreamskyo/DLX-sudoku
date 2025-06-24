@@ -2,8 +2,8 @@
 #ifndef __DLX_HPP__
 #define __DLX_HPP__
 
-#include<iostream>
-#include<vector>
+#include <iostream>
+#include <vector>
 using namespace std;
 
 class DLX{
@@ -40,17 +40,16 @@ private:
 
 public:
 
-	DLX(vector<vector<int>> &output){
-		answer = &output;
-		cols = {
+	DLX(vector<vector<int>> &output) : answer(&output), root(nullptr), cols
+		{
         	cellCol(1, 2),
         	rowCol(1, 4),
         	colCol(2, 4),
         	boxCol(1, 2, 4)
-    	};
+		}
+	{
 		sudoku.assign(9,vector<int>(9,0)); // 0 表示空格，其餘是題目的提示數
 		columns.resize(COLS);
-		root = nullptr;
 		row_nodes.resize(SIZE);
 	}
 

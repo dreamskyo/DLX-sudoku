@@ -1,4 +1,4 @@
-#include"DLX.hpp"
+#include "DLX.hpp"
 using namespace std;
 
 // 映射函式：將 cell(row, col) 放入 num 對應到第幾欄
